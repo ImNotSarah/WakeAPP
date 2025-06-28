@@ -3,10 +3,79 @@ import threading
 import deteccao
 import asyncio
 import winsound
+import requests # Importar a biblioteca requests para fazer requisições HTTP
+
+# URLs dos seus webhooks do n8n. Você DEVE substituir estas URLs pelas suas URLs reais do n8n.
+N8N_REGISTER_WEBHOOK_URL = "https://driver777.app.n8n.cloud/webhook-test/register"
+N8N_LOGIN_WEBHOOK_URL = "https://driver777.app.n8n.cloud/webhook-test/login"
 
 users_db = {}
 ligado = False
 usuario_logado = ""
+
+# Funções simuladas para deteccao (seção "deteccao")
+# No seu ambiente real, 'deteccao' seria um módulo separado.    
+class DeteccaoSimulada:
+    def __init__(self):
+        self.camera_ativa = False
+
+    def start_camera_detection(self):
+        print("Detecção da câmera iniciada (simulado).")
+        while self.camera_ativa:
+            # Simula algum trabalho da câmera
+            asyncio.sleep(1)
+        print("Detecção da câmera parada (simulado).")
+
+deteccao = DeteccaoSimulada()
+
+# Função para enviar dados para o webhook de registro do n8n
+def send_registration_to_n8n(username, password):
+    """
+    Envia dados de registro para o webhook de registro do n8n.
+    """
+    payload = {
+        "eventType": "cadastro",
+        "username": username,
+        "password": password
+    }
+    
+    try:
+        response = requests.post(N8N_REGISTER_WEBHOOK_URL, json=payload, timeout=5)
+        response.raise_for_status() # Lança um HTTPError para respostas de erro (4xx ou 5xx)
+        print(f"Dados de registro enviados para n8n com sucesso: {response.status_code}")
+        print(f"Resposta n8n: {response.text}")
+    except requests.exceptions.Timeout:
+        print("Erro: A requisição de registro para o n8n expirou.")
+    except requests.exceptions.ConnectionError:
+        print("Erro: Não foi possível conectar ao servidor de registro n8n. Verifique a URL e sua conexão.")
+    except requests.exceptions.HTTPError as err:
+        print(f"Erro HTTP ao enviar dados de registro para n8n: {err}")
+    except Exception as e:
+        print(f"Ocorreu um erro inesperado ao enviar dados de registro para n8n: {e}")
+
+# Função para enviar dados para o webhook de login do n8n
+def send_login_to_n8n(username):
+    """
+    Envia dados de login para o webhook de login do n8n.
+    """
+    payload = {
+        "eventType": "login",
+        "username": username
+    }
+    
+    try:
+        response = requests.post(N8N_LOGIN_WEBHOOK_URL, json=payload, timeout=5)
+        response.raise_for_status() # Lança um HTTPError para respostas de erro (4xx ou 5xx)
+        print(f"Dados de login enviados para n8n com sucesso: {response.status_code}")
+        print(f"Resposta n8n: {response.text}")
+    except requests.exceptions.Timeout:
+        print("Erro: A requisição de login para o n8n expirou.")
+    except requests.exceptions.ConnectionError:
+        print("Erro: Não foi possível conectar ao servidor de login n8n. Verifique a URL e sua conexão.")
+    except requests.exceptions.HTTPError as err:
+        print(f"Erro HTTP ao enviar dados de login para n8n: {err}")
+    except Exception as e:
+        print(f"Ocorreu um erro inesperado ao enviar dados de login para n8n: {e}")
 
 
 async def main(page: ft.Page):
@@ -196,6 +265,8 @@ async def main(page: ft.Page):
         if usuario in users_db and users_db[usuario] == senha:
             usuario_logado = usuario
             navegar_para(criar_main_view())
+            # Enviar dados de login para o n8n
+            send_login_to_n8n(usuario)
         else:
             login_mensagem.value = "Usuário ou senha incorretos."
             page.update()
@@ -240,6 +311,8 @@ async def main(page: ft.Page):
             else:
                 users_db[usuario] = senha
                 cadastro_mensagem.value = "Cadastro realizado com sucesso!"
+                # Enviar dados de cadastro para o n8n
+                send_registration_to_n8n(usuario, senha)
         else:
             cadastro_mensagem.value = "Preencha todos os campos!"
         page.update()
@@ -282,4 +355,5 @@ async def main(page: ft.Page):
     await mostrar_splash()
 
 if __name__ == "__main__":
+    # Certifique-se de que a biblioteca 'requests' está instalada: pip install requests
     asyncio.run(ft.app_async(target=main))
