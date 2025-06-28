@@ -65,6 +65,42 @@ async def main(page: ft.Page):
             menu_container = None
         navegar_para(login_view)
 
+    def abrir_contato_emergencia(e):
+        email_field = ft.TextField(label="E-mail de emergência")
+        whatsapp_field = ft.TextField(label="WhatsApp de emergência")
+
+        def salvar_contato(ev):
+            email = email_field.value
+            whatsapp = whatsapp_field.value
+            # Aqui você pode salvar ou processar os dados como quiser
+            page.snack_bar = ft.SnackBar(ft.Text("Contato salvo com sucesso!"))
+            page.snack_bar.open = True
+            page.update()
+            navegar_para(criar_main_view())
+
+        contato_view = ft.View(
+            "/contato_emergencia",
+            [
+                ft.Column(
+                    [
+                        ft.Text("Contato de Emergência", size=25,
+                                weight=ft.FontWeight.BOLD),
+                        email_field,
+                        whatsapp_field,
+                        ft.ElevatedButton("Salvar", on_click=salvar_contato),
+                        ft.TextButton(
+                            "Voltar", on_click=lambda _: navegar_para(criar_main_view()))
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    tight=True
+                )
+            ],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        )
+        navegar_para(contato_view)
+
     def toggle_menu(e):
         nonlocal menu_aberto, menu_container, main_view
         menu_aberto = not menu_aberto
@@ -76,6 +112,8 @@ async def main(page: ft.Page):
                     [
                         ft.Text(f"Olá, {usuario_logado}",
                                 weight=ft.FontWeight.BOLD),
+                        ft.TextButton("Contato de emergência",
+                                      on_click=abrir_contato_emergencia),
                         ft.TextButton("Logoff", on_click=logout),
                     ],
                     tight=True,
@@ -85,7 +123,7 @@ async def main(page: ft.Page):
                 bgcolor="white",
                 border=ft.border.all(1, "black"),
                 padding=10,
-                width=150,
+                width=180,
                 left=0,
                 top=40,
                 alignment=ft.alignment.top_left,
@@ -109,7 +147,6 @@ async def main(page: ft.Page):
             [
                 ft.Stack(
                     [
-                        # Conteúdo central realmente centralizado
                         ft.Container(
                             content=ft.Column(
                                 [
@@ -123,17 +160,13 @@ async def main(page: ft.Page):
                                 tight=True,
                             ),
                             alignment=ft.alignment.center,
-                            expand=True,  # Preenche o Stack
+                            expand=True,
                         ),
-                        # Topo com botão menu e nome do app
                         ft.Container(
                             content=ft.Row(
                                 [
                                     ft.TextButton(
-                                        "☰",
-                                        tooltip="Menu",
-                                        on_click=toggle_menu
-                                    ),
+                                        "☰", tooltip="Menu", on_click=toggle_menu),
                                     ft.Text("WakeApp", size=20,
                                             weight=ft.FontWeight.BOLD),
                                 ],
@@ -145,7 +178,7 @@ async def main(page: ft.Page):
                             alignment=ft.alignment.top_left,
                         )
                     ],
-                    expand=True  # ESSENCIAL: o Stack agora ocupa toda a tela
+                    expand=True
                 )
             ]
         )
